@@ -1,5 +1,6 @@
 import sys
-sys.path.append("..") # 親ディレクトリのファイルをインポートするための設定
+sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
+# sys.path.append("..")
 from dataset import spiral
 import matplotlib.pyplot as plt
 
