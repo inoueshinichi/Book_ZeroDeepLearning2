@@ -1,5 +1,6 @@
 import sys
 sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP")
+sys.path.append("/home/inoue/Desktop/DeepLearning2_NLP")
 import numpy
 import time
 import matplotlib.pyplot as plt
@@ -53,18 +54,18 @@ class Trainer:
                     elapsed_time = time.time() - start_time
                     print('| epoch %d |  iter %d / %d | time %d[s] | perplexity %.2f'
                           % (self.current_epoch + 1, iters + 1, max_iters, elapsed_time, ppl))
-                    self.ppl_list.append(float(ppl))
+                    self.loss_list.append(float(ppl))
                     total_loss, loss_count = 0, 0
 
         self.current_epoch += 1
 
 
     def plot(self, ylim=None):
-        x = numpy.arange(len(self.ppl_list))
+        x = numpy.arange(len(self.loss_list))
         if ylim is not None:
             plt.ylim(*ylim)
 
-        plt.plot(x, self.ppl_list, label='train')
+        plt.plot(x, self.loss_list, label='train')
         plt.xlabel(f'iterations (x + {str(self.eval_interval)} + )')
         plt.ylabel('perplexity')
         plt.show()
@@ -82,4 +83,39 @@ def remove_duplicate(params, grads):
     params, grads = params[:], grads[:] # copy list
 
     while True:
+        find_flg = False
+        L = len(params)
+
+        # [0,1,2,3] -> (0,1)(0,2)(0,3)(1,2)(1,3)(2,3) 4_C_2 = 6通り
+        for i in range(0, L - 1):
+            for j in range(i + 1, L):
+
+                # 重みを共有する場合
+                if params[i] is params[j]:
+                    grads[i] += grads[j] # 勾配の加算
+                    find_flg = True
+                    params.pop(j)
+                    grads.pop(j)
+                
+                # 転地行列として重みを共有する場合(weight tying)
+                elif params[i].ndim == 2 and \
+                     params[j].ndim == 2 and \
+                     params[i].T.shape == params[j].shape and \
+                     np.all(params[i].T == params[j]):
+                    grads[i] += grads[j].t
+                    find_flg = True
+                    params.pop(j)
+                    grads.pop(j)
+                
+                if find_flg:
+                    break
+            if find_flg:
+                break
         
+        if not find_flg:
+            break
+
+    return params, grads
+
+
+
