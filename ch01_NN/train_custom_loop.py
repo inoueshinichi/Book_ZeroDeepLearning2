@@ -1,6 +1,6 @@
 import sys
 sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP")
-sys.path.append("/home/inoue/Desktop/DeepLearning2_NLP")
+sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 
 import numpy as np 
 from common.optimizer import SGD

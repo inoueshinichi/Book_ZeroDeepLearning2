@@ -31,7 +31,7 @@ goodbye   0     1         0     1   0       0   0
 import os
 import sys
 sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP")
-sys.path.append("/home/inoue/Desktop/DeepLearning2_NLP")
+sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 
 import numpy as np
 from common.utils import preprocess
