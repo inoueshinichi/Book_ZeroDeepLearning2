@@ -135,3 +135,36 @@ class SigmoidWithLoss:
             return dx
 
     
+
+# Ebmeddingレイヤ: 重みW(N,W)から特定行を抜き出す作業
+class Embedding:
+
+    def __init__(self, W):
+        self.params = [W]
+        self.grads = [np.zeros_like(W)]
+        self.idx = None
+
+    def forward(self, idx):
+        W, = self.params
+        self.idx = idx
+        out = W[idx]
+        return out
+
+    def backward(self, dout):
+        '''悪い例：idxにダブリがあった場合、指定行に代入されてダブリIDの情報が反映されない'''
+        # dW, = self.grads
+        # dW[...] = 0 # 形状を保ったまま各要素を0で上書きする
+        # dW[self.idx] = dout # 実は悪い例
+
+        '''idxにダブリがあった場合でも、大丈夫なプログラム'''
+        dW, = self.grads
+        dW[...] = 0
+
+        for i, word_id in enumerate(self.idx):
+            dW[word_id] += dout[i]
+            # もしくは
+            # np.add.at(dW, self.idx, dout)
+
+        return None
+    
+    

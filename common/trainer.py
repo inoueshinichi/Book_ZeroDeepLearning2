@@ -5,7 +5,7 @@ import numpy
 import time
 import matplotlib.pyplot as plt
 from common.np import * # import numpy as np
-from common.util import clip_grads
+from common.utils import clip_grads
 
 
 class Trainer:
@@ -37,6 +37,8 @@ class Trainer:
             for iters in range(max_iters):
                 batch_x = x[iters*batch_size:(iters+1)*batch_size]
                 batch_t = t[iters*batch_size:(iters+1)*batch_size]
+                # print(f"batch_x shape: {batch_x.shape}")
+                # print(f"batch_t shape: {batch_t.shape}")
 
                 # 勾配を求め、パラメータを更新
                 loss = model.forward(batch_x, batch_t)
@@ -56,8 +58,7 @@ class Trainer:
                           % (self.current_epoch + 1, iters + 1, max_iters, elapsed_time, ppl))
                     self.loss_list.append(float(ppl))
                     total_loss, loss_count = 0, 0
-
-        self.current_epoch += 1
+            self.current_epoch += 1
 
 
     def plot(self, ylim=None):

@@ -6,7 +6,6 @@ import numpy as np
 
 from common.layers import MatMul
 
-
 def test_affine():
 
     # 簡素な全結合層
@@ -99,8 +98,32 @@ def test_word2vec():
     print(f"s: {s}")
 
     
+def test_generate_contexts_and_targets():
+    # コーパスの作成
+    from common.utils import preprocess
+    text = 'You say goodbye and I say hello.'
+    corpus, word_to_id, id_to_word = preprocess(text)
+    print(f"corpus: {corpus}")
+    print(f"id_to_word: {id_to_word}")
+
+    # コンテキストとターゲットの作成
+    from common.utils import create_context_target
+    contexts, targets = create_context_target(corpus)
+    print(f"contexts: {contexts}")
+    print(f"targets: {targets}")
+
+    # one-hotベクトルに変換
+    from common.utils import convert_one_hot
+    vocab_size = len(word_to_id)
+    targets = convert_one_hot(targets, vocab_size)
+    contexts = convert_one_hot(contexts, vocab_size)
+    print("one-hot targets: ", targets)
+    print("one-hot contexts: ", contexts)
+
 
 
 if __name__ == "__main__":
     test_affine()
     test_word2vec()
+    test_generate_contexts_and_targets()
+    
