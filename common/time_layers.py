@@ -30,7 +30,7 @@ class TimeEmbedding:
         
         return out
 
-    def backeard(self, dout):
+    def backward(self, dout):
         N, T, D = dout.shape
 
         grad = 0
@@ -52,7 +52,7 @@ class TimeAffine:
         self.x = None
 
     def forward(self, x):
-        N, T, D = x.shpae
+        N, T, D = x.shape
         W, b = self.params
 
         rx = x.reshape(N * T, -1) # (N*T, D)
@@ -79,6 +79,52 @@ class TimeAffine:
         self.grads[1][...] = db
 
         return dx
+
+
+class TimeSoftmaxWithLoss:
+
+    def __init__(self):
+        self.params, self.grads = [], []
+        self.cache = None
+        self.ignore_label = -1
+
+    def forward(self, xs, ts):
+        N, T, V = xs.shape
+
+        if ts.ndim == 3: # 教師ラベルがone-hotベクトルの場合
+            ts = np.argmax(ts, axis=2) # ts(N, T, V) -> ts(N, T)
+        
+        mask = (ts != self.ignore_label) # コーパスの値として-1(無効値)以外を抽出するマスク
+
+        # バッチ分と時系列分をまとめる
+        xs = xs.reshape(N * T, V)
+        ts = ts.reshape(N * T)
+        mask = mask.reshape(N * T) # (True, True, False, True, ....)
+
+        ys = softmax(xs) # (N*T, V)
+        ls = np.log(ys[np.arange(N*T), ts]) # (N*T,) 教師ラベルに該当するsoftmaxの値(確率)だけ抜き出して、LOGを取る
+        ls *= mask # ignore_labelに該当するデータは損失を0にする
+        loss = -np.sum(ls)
+        loss /= mask.sum()
+
+        self.cache = (ts, ys, mask, (N, T, V))
+        
+        return loss
+
+    def backward(self, dout=1):
+        ts, ys, mask, (N, T, V) = self.cache
+
+        dx = ys # softmaxの出力(確率)
+        dx[np.arange(N*T), ts] -= 1 # softmaxの出力(確率)と確率1.0(理想値)との差分=ソフトマックスの勾配
+        dx *= dout
+        dx /= mask.sum() # 有効値のみで
+        dx *= mask[:, np.newaxis] # (N*T, 1), ignore_labelに該当するデータは勾配を0にする
+
+        dx = dx.reshape((N, T, V))
+
+        return dx
+
+    
 
 
 
