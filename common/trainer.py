@@ -141,7 +141,7 @@ class RnnlmTrainer:
             for i, offset in enumerate(offsets):
                 batch_x[i, time] = x[(offset + self.time_idx) % data_size]
                 batch_t[i, time] = t[(offset + self.time_idx) % data_size]
-            self.time_idx += 1
+            self.time_idx += 1 # # 0リセットされないので、iterループ毎にcorpusのoffsetからのズレを変更している.
         return batch_x, batch_t
 
     def fit(self, xs, ts, max_epoch=10, batch_size=20, time_size=35,
