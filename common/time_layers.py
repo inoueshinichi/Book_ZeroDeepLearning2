@@ -1,4 +1,5 @@
 import sys
+from typing_extensions import ParamSpec
 sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP")
 sys.path.append("/home/inoue/Desktop/DeepLearning2_NLP")
 import os
@@ -291,5 +292,90 @@ class LSTM:
         return dx, dh_prev, dc_prev
 
     
+class GRU:
+
+    def __init__(self, Wx, Wh, b):
+        self.params = [Wx, Wh, b]
+        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.cache = None
+
+    def forward(self, x, h_prev):
+        # x (N, D) = (バッチサイズ, 1時刻あたりの特徴ベクトルの次元)
+        # h_prev (N, H) = (バッチサイズ, 1時刻あたりの隠れベクトルの次元)
+        # Wx (D, 3H)
+        # Wh (H, 3H)
+        # Wx_z (D, H)
+        # Wx_r (D, H)
+        # Wx_h (D, H)
+        # Wh_z (H, H)
+        # Wh_r (H, H)
+        # Wh_h (H, H)
+        Wx, Wh, b = self.params
+        H = Wh.shape[0]
+
+        Wxz, Wxr, Wxh = Wx[:, :H], Wx[:, H:2*H], Wx[:, 2*H:]
+        Whz, Whr, Whh = Wh[:, :H], Wh[:, H:2*H], Wh[:, 2*H:]
+        bz, br, bh = b[:, :H], b[:, H:2*H], b[:, 2*H:]
+
+        z = sigmoid(np.dot(x, Wxz) + np.dot(h_prev, Whz) + bz)
+        r = sigmoid(np.dot(x, Wxr) + np.dot(h_prev, Whr) + br)
+        h_hat = np.tanh(np.dot(x, Wxh) + np.dot(r*h_prev, Whh) + bh)
+        h_next = (1 - z) * h_prev + z * h_hat
+
+        self.cache = (x, h_prev, r, z, h_hat)
+        return h_next
+
+
+    def backward(self, dh_next):
+        Wx, Wh, b = self.params
+        H = Wh.shape[0]
+        Wxz, Wxr, Wxh = Wx[:, :H], Wx[:, H:2 * H], Wx[:, 2 * H:]
+        Whz, Whr, Whh = Wh[:, :H], Wh[:, H:2 * H], Wh[:, 2 * H:]
+        x, h_prev, r, z, h_hat = self.cache
+
+        dh_hat = dh_next * z
+        dh_prev = dh_next * (1 - z)
+
+        # tanh
+        dt = dh_hat * (1 - h_hat ** 2)
+        dbh = np.sum(dt, axis=0)
+        dWhh = np.dot((r * h_prev).T, dt) # (H, N) @ (N, H) = (H, H)
+        dWxh = np.dot(x.T, dt) # (D, N) @ (N, H) = (D, H)
+        dx = np.dot(dt, Wxh.T) # (N, H) @ (H, D) = (N, D)
+        dhr = np.dot(dt, Whh.T) # (N, H) @ (H, H) = (N, H)
+        dr = dhr * h_prev # (N, H) * (N, H) = (N, H)
+        dh_prev += r * dhr
+
+        # update gate(z)
+        dz = dh_next * dh_hat - dh_prev * dh_next
+        dt = dz * z * (1 - z)(
+        dbz = np.sum(dt, axis=0)
+        dWhz = np.dot(h_prev.T, dt) # (H, N) @ (N, H) = (H, H)
+        dh_prev += np.dot(dt, Whz.T) # (N, H) @ (H, H) = (N, H)
+        dWxz = np.dot(x.T, dt) # (D, N) @ (N, H) = (D, H)(
+        dx += np.dot(dt, Wxz.T) # (N, H) @ (H, D) = (N, D)
+
+        # reset gate(r)
+        dt = dr * r * (1 - r)
+        dbr = np.sum(dt, axis=0)
+        dWhr = np.dot(h_prev.T, dt)
+        dh_prev += np.dot(dt, Whr.T)
+        dWxr = np.dot(x.T, dt)
+        dx += np.dot(dt, Wxr.T)
+
+        self.dWx = np.hstack((dWxz, dWxr, dWxh))
+        self.dWh = np.hstack(dWhz, dWhr, dWhh))
+        self.db = np.hstack((dbz, dbr, dbh))
+
+        self.grads[0][...] = self.dWx
+        self.grads[1][...] = self.dWh
+        self.grads[2][...] = self.db
+
+        return dx, dh_prev
+
+        
+        
+
+
 
 
