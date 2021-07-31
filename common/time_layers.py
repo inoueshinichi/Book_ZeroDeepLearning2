@@ -1,7 +1,7 @@
 import sys
-from typing_extensions import ParamSpec
 sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP")
 sys.path.append("/home/inoue/Desktop/DeepLearning2_NLP")
+
 import os
 from common.np import *
 from common.layers import *
@@ -291,7 +291,70 @@ class LSTM:
 
         return dx, dh_prev, dc_prev
 
+
+class TimeLSTM:
+
+    def __init__(self, Wx, Wh, b, statefull=True):
+        self.params = [Wx, Wh, b]
+        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.layers = None
+        self.h, self.c = None, None
+        self.dh = None
+        self.statefull = statefull
+
+    def forward(self, xs):
+        Wx, Wh, b = self.params
+        N, T, D = xs.shape
+        H = Wh.shape[0]
+
+        self.layers = []
+        hs = np.empty((N, T, H), dtype='f')
+
+        if not self.statefull or self.h is None:
+            self.h = np.zeros((N, H), dtype='f')
+        if not self.statefull or self.c is None:
+            self.c = np.zeros((N, H), dtype='f')
+        
+        for t in range(T):
+            layer = LSTM(*self.params)
+            self.h, self.c = layer.forward(xs[:, t, :], self.h, self.c)
+            hs[:, t, :] = self.h
+            self.layers.append(layer)
+
+        return hs
+
+    def backward(self, dhs):
+        Wx, Wh, b = self.params
+        N, T, H = dhs.shape
+        D = Wx.shape[0]
+
+        dxs = np.empty((N, T, D), dtype='f')
+        dh, dc = 0, 0
+
+        grads = [0, 0, 0]
+        for t in reversed(range(T)):
+            layer = self.layers[t]
+            dx, dh, dc = layer.backward(dhs[:, t, :] + dh, dc)
+            dxs[:, t, :] = dx
+
+            # [Wx, Wh, b]は各LSTMレイヤで共通の重みなので、各レイヤの勾配を加算する
+            for i, grad in enumerate(layer.grads):
+                grads[i] += grad
+            
+        for i, grad in enumerate(grads):
+            self.grads[i][...] = grad
+
+        self.dh = dh
+        return dxs
+
+    def set_state(self, h, c=None):
+        self.h, self.c = h, c
     
+    def reset_state(self):
+        self.h, self.c = None, None
+    
+
+
 class GRU:
 
     def __init__(self, Wx, Wh, b):
@@ -348,7 +411,7 @@ class GRU:
 
         # update gate(z)
         dz = dh_next * dh_hat - dh_prev * dh_next
-        dt = dz * z * (1 - z)(
+        dt = dz * z * (1 - z)
         dbz = np.sum(dt, axis=0)
         dWhz = np.dot(h_prev.T, dt) # (H, N) @ (N, H) = (H, H)
         dh_prev += np.dot(dt, Whz.T) # (N, H) @ (H, H) = (N, H)
@@ -364,7 +427,7 @@ class GRU:
         dx += np.dot(dt, Wxr.T)
 
         self.dWx = np.hstack((dWxz, dWxr, dWxh))
-        self.dWh = np.hstack(dWhz, dWhr, dWhh))
+        self.dWh = np.hstack((dWhz, dWhr, dWhh))
         self.db = np.hstack((dbz, dbr, dbh))
 
         self.grads[0][...] = self.dWx

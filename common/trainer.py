@@ -81,40 +81,36 @@ def remove_duplicate(params, grads):
         params ([type]): [description]
         grads ([type]): [description]
     """
-    params, grads = params[:], grads[:] # copy list
+    '''
+    パラメータ配列中の重複する重みをひとつに集約し、
+    その重みに対応する勾配を加算する
+    '''
+    params, grads = params[:], grads[:]  # copy list
 
     while True:
         find_flg = False
         L = len(params)
 
-        # [0,1,2,3] -> (0,1)(0,2)(0,3)(1,2)(1,3)(2,3) 4_C_2 = 6通り
         for i in range(0, L - 1):
             for j in range(i + 1, L):
-
                 # 重みを共有する場合
                 if params[i] is params[j]:
-                    grads[i] += grads[j] # 勾配の加算
+                    grads[i] += grads[j]  # 勾配の加算
                     find_flg = True
                     params.pop(j)
                     grads.pop(j)
-                
-                # 転地行列として重みを共有する場合(weight tying)
-                elif params[i].ndim == 2 and \
-                     params[j].ndim == 2 and \
-                     params[i].T.shape == params[j].shape and \
-                     np.all(params[i].T == params[j]):
-                    grads[i] += grads[j].t
+                # 転置行列として重みを共有する場合（weight tying）
+                elif params[i].ndim == 2 and params[j].ndim == 2 and \
+                     params[i].T.shape == params[j].shape and np.all(params[i].T == params[j]):
+                    grads[i] += grads[j].T
                     find_flg = True
                     params.pop(j)
                     grads.pop(j)
-                
-                if find_flg:
-                    break
-            if find_flg:
-                break
-        
-        if not find_flg:
-            break
+
+                if find_flg: break
+            if find_flg: break
+
+        if not find_flg: break
 
     return params, grads
 
