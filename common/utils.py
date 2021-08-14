@@ -263,6 +263,7 @@ def convert_one_hot(corpus, vocab_size):
         :return: one-hot表現（2次元もしくは3次元のNumPy配列）
     '''
     N = corpus.shape[0]
+    one_hot = None
 
     if corpus.ndim == 1:
         one_hot = np.zeros((N, vocab_size), dtype=np.int32)
