@@ -2,7 +2,8 @@ import sys
 sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
 sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 
-from common.time_layers import TimeEmbedding, TimeLSTM, TimeAffine
+from common.time_layers import TimeEmbedding, TimeLSTM, TimeAffine, TimeSoftmaxWithLoss
+from common.base_model import BaseModel
 
 import numpy as np
 
@@ -75,5 +76,53 @@ class Decoder:
         dout = self.embed.backward(dout)
         self.dh = self.lstm.dh
         return self.dh
+
+    def generate(self, h, start_id, sample_size):
+        sampled = []
+        sample_id = start_id
+        self.lstm.set_state(h)
+
+        for _ in range(sample_size):
+            x = np.array(sample_id).reshape((1, 1))
+            out = self.embed.forward(x)
+            out = self.lstm.forward(out)
+            score = self.affine.foward(out)
+
+            sample_id = np.argmax(score.flattne())
+            sampled.append(int(sample_id))
+        
+        return sampled
+    
+
+class Seq2Seq(BaseModel):
+    def __init__(self, vocab_size, wordvec_size, hidden_size):
+        V, D, H = vocab_size, wordvec_size, hidden_size
+        self.encoder = Encoder(V, D, H)
+        self.decoder = Decoder(V, D, H)
+        self.softmax = TimeSoftmaxWithLoss()
+
+        self.params = self.encoder.params + self.decoder.params
+        self.grads = self.encoder.grads + self.decoder.grads
+
+    def forward(self, xs, ts):
+        decoder_xs, decoder_ts = ts[:, :-1], ts[:, 1:]
+
+        h = self.encoder.forward(xs)
+        score = self.decoder.forward(decoder_xs, h)
+        loss = self.softmax.forward(score, decoder_ts)
+        return loss
+
+    def backward(self, dout=1):
+        dout = self.softmax.backward(dout)
+        dh = self.decoder.backward(dout)
+        dout = self.encoder.backward(dh)
+        return dout
+    
+    def generate(self, xs, start_id, sample_size):
+        h = self.encoder.forward(xs)
+        sampled = self.decoder.generate(h, start_id, sample_size)
+        return sampled
+    
+    
 
     
