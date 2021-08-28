@@ -46,9 +46,9 @@ def main():
     optimizer = SGD(lr)
 
     # (1) ミニバッチの各サンプルの読み込み開始位置を計算
-    jump = (corpus_size - 1) // batch_size
+    jump = (corpus_size - 1) // batch_size # e.g. corpus_size=1000, batch_size=20 -> (1000-1)//20 -> 49
     print("jump: ", jump)
-    offsets = [i * jump for i in range(batch_size)]
+    offsets = [i * jump for i in range(batch_size)] # batch_size=20, jump=49 -> [0, 49, 98, ..., 931]
     print("offsets: ", offsets)
 
     # 学習
