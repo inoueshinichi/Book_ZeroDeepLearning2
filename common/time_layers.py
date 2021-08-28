@@ -106,7 +106,7 @@ class TimeSoftmaxWithLoss:
         ls = np.log(ys[np.arange(N*T), ts]) # (N*T,) 教師ラベルに該当するsoftmaxの値(確率)だけ抜き出して、LOGを取る
         ls *= mask # ignore_labelに該当するデータは損失を0にする
         loss = -np.sum(ls)
-        loss /= mask.sum()
+        loss /= mask.sum() # 無効idを除いた総数で割る
 
         self.cache = (ts, ys, mask, (N, T, V))
         
@@ -117,8 +117,8 @@ class TimeSoftmaxWithLoss:
 
         dx = ys # softmaxの出力(確率)
         dx[np.arange(N*T), ts] -= 1 # softmaxの出力(確率)と確率1.0(理想値)との差分=ソフトマックスの勾配
-        dx *= dout
-        dx /= mask.sum() # 有効値のみで
+        dx *= dout # (N*T, V)
+        dx /= mask.sum() # 有効値のみで???? 有効なラベル数で割る意味がわからない
         dx *= mask[:, np.newaxis] # (N*T, 1), ignore_labelに該当するデータは勾配を0にする
 
         dx = dx.reshape((N, T, V))
@@ -128,8 +128,8 @@ class TimeSoftmaxWithLoss:
     
 
 
-
-class RNN:
+# RNNセル
+class RNNCell:
     def __init__(self, Wx, Wh, b):
         self.params = [Wx, Wh, b]
         self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
@@ -189,8 +189,8 @@ class TimeRNN:
             self.h = np.zeros((N, H), dtype=np.float32)
         
         for t in range(T):
-            # 各RNNレイヤで同じ重みを使用している
-            layer = RNN(*self.params)
+            # 各RNNセルで同じ重みを使用している(勾配は各々のセルで異なる)
+            layer = RNNCell(*self.params)
             self.h = layer.forward(xs[:, t, :], self.h)
             hs[:, t, :] = self.h
             self.layers.append(layer)
@@ -205,16 +205,17 @@ class TimeRNN:
 
         dxs = np.empty((N, T, D), dtype=np.float32)
         dh = 0
-        grads = [0, 0, 0] # 各RNNレイヤで使っている同じ重みの勾配は加算される
+        grads = [0, 0, 0] # dWx, dWh, db
         for t in reversed(range(T)):
             layer = self.layers[t]
             dx, dh = layer.backward(dhs[:, t, :] + dh) # 合算した勾配
             dxs[:, t, :] = dx
 
-            # 各RNNレイヤで同じ重み(Wx, Wh, b)を使用しているので
-            # 対応する勾配は各レイヤでの逆誤差伝搬時に加算されていく
+            # 各RNNセルで同じ重み(Wx, Wh, b)を使用しているが、
+            # 各セルでの教師ラベルは異なるので勾配が変わってくる.
+            # 対応する勾配は各セルでの逆誤差伝搬時に加算されていく
             for i, grad in enumerate(layer.grads):
-                grads[i] += grad
+                grads[i] += grad # 各RNNセルでの勾配は加算される
             
         # TimeRNNレイヤの勾配
         for i, grad in enumerate(grads):
@@ -224,7 +225,7 @@ class TimeRNN:
 
     
 
-class LSTM:
+class LSTMCell:
 
     def __init__(self, Wx, Wh, b):
         self.params = [Wx, Wh, b]
@@ -296,7 +297,11 @@ class TimeLSTM:
 
     def __init__(self, Wx, Wh, b, statefull=True):
         self.params = [Wx, Wh, b]
-        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.grads = [
+            np.zeros_like(Wx), 
+            np.zeros_like(Wh), 
+            np.zeros_like(b)
+        ]
         self.layers = None
         self.h, self.c = None, None
         self.dh = None
@@ -316,7 +321,7 @@ class TimeLSTM:
             self.c = np.zeros((N, H), dtype='f')
         
         for t in range(T):
-            layer = LSTM(*self.params)
+            layer = LSTMCell(*self.params)
             self.h, self.c = layer.forward(xs[:, t, :], self.h, self.c)
             hs[:, t, :] = self.h
             self.layers.append(layer)
@@ -331,20 +336,21 @@ class TimeLSTM:
         dxs = np.empty((N, T, D), dtype='f')
         dh, dc = 0, 0
 
-        grads = [0, 0, 0]
+        grads = [0, 0, 0] # dWx, dWh, db
         for t in reversed(range(T)):
             layer = self.layers[t]
             dx, dh, dc = layer.backward(dhs[:, t, :] + dh, dc)
             dxs[:, t, :] = dx
 
-            # [Wx, Wh, b]は各LSTMレイヤで共通の重みなので、各レイヤの勾配を加算する
+            # [Wx, Wh, b]は各LSTMセルで共通な重みであり、
+            # 各セルの勾配の加算値で重みを更新する
             for i, grad in enumerate(layer.grads):
-                grads[i] += grad
+                grads[i] += grad # 各LSTMセルでの勾配は加算される
             
         for i, grad in enumerate(grads):
             self.grads[i][...] = grad
 
-        self.dh = dh
+        self.dh = dh # 最終セルの隠れベクトルの勾配を取得
         return dxs
 
     def set_state(self, h, c=None):
@@ -355,7 +361,7 @@ class TimeLSTM:
     
 
 
-class GRU:
+class GRUCell:
 
     def __init__(self, Wx, Wh, b):
         self.params = [Wx, Wh, b]
@@ -436,7 +442,63 @@ class GRU:
 
         return dx, dh_prev
 
+
+class GRUTime:
+
+    def __init__(self, Wx, Wh, b, statefull=True):
+        self.params = [Wx, Wh, b]
+        self.grads = [
+            np.zeros_like(Wx), 
+            np.zeros_like(Wh),
+            np.zeros_like(b)
+        ]
+        self.layers = None
+        self.h = None
+        self.statefull = statefull
+    
+    def forward(self, xs):
+        Wx, Wh, b = self.params
+        N, T, D = xs.shape
+        H = Wh.shape[0] # 隠れベクトルの次元
+
+        self.layers = []
+        hs = np.empty((N, T, H), dtype=np.float32)
         
+        if not self.statefull or self.h is None:
+            self.h = np.zeros((N, H), dtype=np.float32)
+
+        for t in range(T):
+            layer = GRUCell(*self.params)
+            self.h = layer.forward(xs[:, t, :], self.h)
+            hs[:, t, :] = self.h
+            self.layers.append(layer)
+        
+        return hs
+
+    def backward(self, dhs):
+        Wx, Wh, b = self.params
+        N, T, H = dhs.shape
+        D = Wx.shape[0]
+
+        dxs = np.empty((N, T, D), dtype=np.float32)
+        dh = 0
+        grads = [0, 0, 0] # dWx, dWh, db
+        for t in reversed(range(T)):
+            layer = self.layers[t]
+            dx, dh = layer.backward(dhs[:, t, :] + dh)
+            dxs[:, t, :] = dx
+
+            # [Wx, Wh, b]は各GRUセルで共通な重みであり、
+            # 各セルの勾配の加算値で重みを更新する
+            for i, grad in enumerate(layer.grads):
+                grads[i] += grad # 各GRUセルでの勾配は加算される
+            
+        for i, grad in enumerate(grads):
+            self.grads[i][...] = grad
+
+        self.dh = dh # 最終セルの隠れベクトルの勾配を取得
+        return dxs
+
     
 class TimeDropout:
 
