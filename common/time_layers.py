@@ -354,6 +354,7 @@ class TimeLSTM:
         return dxs
 
     def set_state(self, h, c=None):
+        # 最初のセルへの隠れベクトルを設定
         self.h, self.c = h, c
     
     def reset_state(self):

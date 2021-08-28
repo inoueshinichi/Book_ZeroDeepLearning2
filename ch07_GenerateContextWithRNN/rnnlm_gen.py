@@ -47,11 +47,13 @@ class BetterRnnlmGen(BetterRnnlm):
         return word_ids
 
     def get_state(self):
+        # 最後のセルが出力した隠れベクトルを取得
         states = []
         for layer in self.lstm_layers:
             states.append((layer.h, layer.c))
         return states
 
     def set_state(self, states):
+        # 最初のセルに入力する隠れベクトルを設定
         for layer, state in zip(self.lstm_layers, states):
             layer.set_state(*state)
