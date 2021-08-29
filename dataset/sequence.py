@@ -3,20 +3,23 @@ sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP") # 親ディレ
 sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 
 import os
-import numpy as np
+import numpy
 
 id_to_char = {}
 char_to_id = {}
 
+
 def _update_vocab(txt):
     chars = list(txt)
+
     for i, char in enumerate(chars):
         if char not in char_to_id:
             tmp_id = len(char_to_id)
             char_to_id[char] = tmp_id
             id_to_char[tmp_id] = char
 
-def load_data(file_name='addition', seed=1984):
+
+def load_data(file_name='addition.txt', seed=1984):
     file_path = os.path.dirname(os.path.abspath(__file__)) + '/' + file_name
 
     if not os.path.exists(file_path):
@@ -37,8 +40,8 @@ def load_data(file_name='addition', seed=1984):
         _update_vocab(a)
 
     # create numpy array
-    x = np.zeros((len(questions), len(questions[0])), dtype=np.int)
-    t = np.zeros((len(questions), len(answers[0])), dtype=np.int)
+    x = numpy.zeros((len(questions), len(questions[0])), dtype=numpy.int)
+    t = numpy.zeros((len(questions), len(answers[0])), dtype=numpy.int)
 
     for i, sentence in enumerate(questions):
         x[i] = [char_to_id[c] for c in list(sentence)]
@@ -46,19 +49,20 @@ def load_data(file_name='addition', seed=1984):
         t[i] = [char_to_id[c] for c in list(sentence)]
 
     # shuffle
-    indices = np.arange(len(x))
+    indices = numpy.arange(len(x))
     if seed is not None:
-        np.random.seed(seed)
-    np.random.shuffle(indices)
+        numpy.random.seed(seed)
+    numpy.random.shuffle(indices)
     x = x[indices]
     t = t[indices]
 
-     # 10% for validation set
+    # 10% for validation set
     split_at = len(x) - len(x) // 10
     (x_train, x_test) = x[:split_at], x[split_at:]
     (t_train, t_test) = t[:split_at], t[split_at:]
 
     return (x_train, t_train), (x_test, t_test)
+
 
 def get_vocab():
     return char_to_id, id_to_char
