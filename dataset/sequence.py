@@ -47,13 +47,24 @@ def load_data(file_name='addition.txt', seed=1984):
     x = numpy.zeros((len(questions), len(questions[0])), dtype=numpy.int)
     t = numpy.zeros((len(questions), len(answers[0])), dtype=numpy.int)
 
+    # print('questions[:5]: ', questions[:5])
     for i, sentence in enumerate(questions):
         for j, c in enumerate(sentence):
             x[i, j] = char_to_id[c]
+        if i < 5:
+            print(f'questions[{i}]: ', sentence)
 
+    # print('answers[:5]: ', answers[:5])
     for i, sentence in enumerate(answers):
         for j, c in enumerate(sentence):
             t[i, j] = char_to_id[c]
+        if i < 5:
+            print(f'answers[{i}]: ', sentence)
+
+    # for i, sentence in enumerate(questions):
+    #     x[i] = [char_to_id[c] for c in list(sentence)]
+    # for i, sentence in enumerate(answers):
+    #     t[i] = [char_to_id[c] for c in list(sentence)]
 
     # shuffle
     indices = numpy.arange(len(x))
