@@ -86,9 +86,9 @@ class Decoder:
             x = np.array(sample_id).reshape((1, 1))
             out = self.embed.forward(x)
             out = self.lstm.forward(out)
-            score = self.affine.foward(out)
+            score = self.affine.forward(out)
 
-            sample_id = np.argmax(score.flattne())
+            sample_id = np.argmax(score.flatten())
             sampled.append(int(sample_id))
         
         return sampled
