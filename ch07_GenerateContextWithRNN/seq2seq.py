@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
+sys.path.append("/Users/inoueshinichi/Desktop/MyGithub/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
 sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 
 from common.time_layers import TimeEmbedding, TimeLSTM, TimeAffine, TimeSoftmaxWithLoss
@@ -22,7 +22,7 @@ class Encoder:
         self.lstm = TimeLSTM(lstm_Wx, lstm_Wh, lstm_b, statefull=False)
 
         self.params = self.embed.params + self.lstm.params
-        self.grads = self.embed.grads + self.lsmt.grads
+        self.grads = self.embed.grads + self.lstm.grads
         self.hs = None
 
     def forward(self, xs):
@@ -74,8 +74,8 @@ class Decoder:
         dout = self.affine.backward(dscore)
         dout = self.lstm.backward(dout)
         dout = self.embed.backward(dout)
-        self.dh = self.lstm.dh
-        return self.dh
+        dh = self.lstm.dh
+        return dh
 
     def generate(self, h, start_id, sample_size):
         sampled = []
@@ -94,7 +94,7 @@ class Decoder:
         return sampled
     
 
-class Seq2Seq(BaseModel):
+class Seq2seq(BaseModel):
     def __init__(self, vocab_size, wordvec_size, hidden_size):
         V, D, H = vocab_size, wordvec_size, hidden_size
         self.encoder = Encoder(V, D, H)

@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
+sys.path.append("/Users/inoueshinichi/Desktop/MyGithub/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
 sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 
 import os
@@ -28,10 +28,14 @@ def load_data(file_name='addition.txt', seed=1984):
 
     questions, answers = [], []
 
-    for line in open(file_path, 'r'):
+    limit = 5
+    for i, line in enumerate(open(file_path, 'r')):
         idx = line.find('_')
         questions.append(line[:idx])
         answers.append(line[idx:-1])
+        if i < limit:
+            print('x: ', line[:idx])
+            print('t: ', line[idx:-1])
 
     # create vocab dict
     for i in range(len(questions)):
@@ -44,9 +48,12 @@ def load_data(file_name='addition.txt', seed=1984):
     t = numpy.zeros((len(questions), len(answers[0])), dtype=numpy.int)
 
     for i, sentence in enumerate(questions):
-        x[i] = [char_to_id[c] for c in list(sentence)]
+        for j, c in enumerate(sentence):
+            x[i, j] = char_to_id[c]
+
     for i, sentence in enumerate(answers):
-        t[i] = [char_to_id[c] for c in list(sentence)]
+        for j, c in enumerate(sentence):
+            t[i, j] = char_to_id[c]
 
     # shuffle
     indices = numpy.arange(len(x))

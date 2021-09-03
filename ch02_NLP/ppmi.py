@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
+sys.path.append("/Users/inoueshinichi/Desktop/MyGithub/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
 sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 from common.utils import np, preprocess, create_co_matrix, cos_similarity, most_similar, ppmi
 

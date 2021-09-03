@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP")
+sys.path.append("/Users/inoueshinichi/Desktop/MyGithub/DeepLearning2_NLP")
 sys.path.append("/home/inoue/Desktop/DeepLearning2_NLP")
 import os
 from common.np import *

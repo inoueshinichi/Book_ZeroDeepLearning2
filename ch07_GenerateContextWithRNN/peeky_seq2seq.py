@@ -1,10 +1,10 @@
 import sys
-sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
+sys.path.append("/Users/inoueshinichi/Desktop/MyGithub/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
 sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 
 from common.time_layers import TimeEmbedding, TimeLSTM, TimeAffine, TimeSoftmaxWithLoss
 from common.base_model import BaseModel
-from seq2seq import Seq2seq, Encoder
+from ch07_GenerateContextWithRNN.seq2seq import Seq2seq, Encoder
 
 import numpy as np
 
@@ -14,11 +14,11 @@ class PeekyDecoder:
         V, D, H = vocab_size, wordvec_size, hidden_size
         rn = np.random.randn
 
-        embed_W = rn(V, D) / 100
-        lstm_Wx = rn(H + D, 4 * H) / np.sqrt(H + D)
-        lstm_Wh = rn(H, 4 * H) / np.sqrt(H)
-        lstm_b  = rn(4 * H)
-        affine_W = rn(H + H, V) / np.sqrt(H + H)
+        embed_W = (rn(V, D) / 100).astype(np.float32)
+        lstm_Wx = (rn(H + D, 4 * H) / np.sqrt(H + D)).astype(np.float32)
+        lstm_Wh = (rn(H, 4 * H) / np.sqrt(H)).astype(np.float32)
+        lstm_b  = np.zeros(4 * H, dtype=np.float32)
+        affine_W = (rn(H + H, V) / np.sqrt(H + H)).astype(np.float32)
         affine_b = np.zeros(V, dtype=np.float32)
 
         self.embed = TimeEmbedding(embed_W)
@@ -48,7 +48,7 @@ class PeekyDecoder:
         out = self.lstm.forward(out)
         out = np.concatenate((hs, out), axis=2)
     
-        score = self.affine.foward(out)
+        score = self.affine.forward(out)
         self.cache = H
         return score
 

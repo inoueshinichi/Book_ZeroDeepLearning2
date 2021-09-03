@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
+sys.path.append("/Users/inoueshinichi/Desktop/MyGithub/DeepLearning2_NLP") # 親ディレクトリのファイルをインポートするための設定
 sys.path.append("/home/inoue/MyGithub/DeepLearning2_NLP")
 
 import numpy as np
@@ -8,7 +8,7 @@ from dataset import sequence
 from common.optimizer import Adam
 from common.trainer import Trainer
 from common.utils import eval_seq2seq
-from peeky_seq2seq import PeekySeq2Seq
+from peeky_seq2seq import PeekySeq2seq
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
 
     # モデル/オプティマイザ/トレーナーの生成
     # model = Seq2seq(vocab_size, wordvec_size, hideen_size)
-    model = PeekySeq2Seq(vocab_size, wordvec_size, hidden_size)
+    model = PeekySeq2seq(vocab_size, wordvec_size, hidden_size)
     optimizer = Adam()
     trainer = Trainer(model, optimizer)
 
@@ -52,7 +52,7 @@ def main():
         
         acc = float(correct_num) / len(x_test)
         acc_list.append(acc)
-        print('val acc %.3f%%', acc * 100)
+        print(f'val acc {acc * 100}')
     
 
 

@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/inoueshinichi/Desktop/DeepLearning2_NLP")
+sys.path.append("/Users/inoueshinichi/Desktop/MyGithub/DeepLearning2_NLP")
 sys.path.append("/home/inoue/Desktop/DeepLearning2_NLP")
 
 import os
@@ -263,7 +263,7 @@ class LSTMCell:
 
         tanh_c_next = np.tanh(c_next)
 
-        ds = dc_next = dc_next + (dh_next * o) * (1 - tanh_c_next ** 2)
+        ds = dc_next + (dh_next * o) * (1 - tanh_c_next ** 2)
         
         dc_prev = ds * f
 
@@ -272,10 +272,10 @@ class LSTMCell:
         do = dh_next * tanh_c_next
         dg = ds * i
 
-        di = di * (1 - i)
-        df = df * (1 - f)
-        do = do * (1 - o)
-        dg = dg * (1 - g ** 2)
+        di *= i * (1 - i)
+        df *= f * (1 - f)
+        do *= o * (1 - o)
+        dg *= (1 - g ** 2)
 
         dA = np.hstack((df, dg, di, do))
 
@@ -283,8 +283,8 @@ class LSTMCell:
         dWx = np.dot(x.T, dA)
         db = np.sum(dA, axis=0)
 
-        self.grads[0][...] = dWh
-        self.grads[1][...] = dWx
+        self.grads[0][...] = dWx
+        self.grads[1][...] = dWh
         self.grads[2][...] = db
 
         dx = np.dot(dA, Wx.T)
@@ -295,7 +295,7 @@ class LSTMCell:
 
 class TimeLSTM:
 
-    def __init__(self, Wx, Wh, b, statefull=True):
+    def __init__(self, Wx, Wh, b, statefull=False):
         self.params = [Wx, Wh, b]
         self.grads = [
             np.zeros_like(Wx), 
