@@ -9,17 +9,19 @@ from common.optimizer import Adam
 from common.trainer import Trainer
 from common.utils import eval_seq2seq
 from peeky_seq2seq import PeekySeq2seq
+from seq2seq import Seq2seq
 
 
 def main():
     
     # データセットの読み込み
     (x_train, t_train), (x_test, t_test) = sequence.load_data('addition.txt')
+    char_to_id, id_to_char = sequence.get_vocab()
 
     # 入力列を逆順にするとSeq2Se2の精度が上がるらしいが。。。クソ理論
-    x_train, x_test = x_train[:, ::-1], x_test[:, ::-1]
-
-    char_to_id, id_to_char = sequence.get_vocab()
+    is_reverse = True
+    if is_reverse:
+        x_train, x_test = x_train[:, ::-1], x_test[:, ::-1]
 
     # ハイパーパラメータの設定
     vocab_size = len(char_to_id)
@@ -30,7 +32,7 @@ def main():
     max_grad = 5.0
 
     # モデル/オプティマイザ/トレーナーの生成
-    # model = Seq2seq(vocab_size, wordvec_size, hideen_size)
+    # model = Seq2seq(vocab_size, wordvec_size, hidden_size)
     model = PeekySeq2seq(vocab_size, wordvec_size, hidden_size)
     optimizer = Adam()
     trainer = Trainer(model, optimizer)

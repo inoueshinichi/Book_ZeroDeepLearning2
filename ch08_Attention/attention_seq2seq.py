@@ -49,8 +49,8 @@ class AttentionDecoder:
         out = self.embed.forward(xs)
         dec_hs = self.lstm.forward(out) # (N, T, H)
         c = self.attention.forward(enc_hs, dec_hs) # (N, T, H)
-        print('c', c.shape)
-        print('dec_hs', dec_hs.shape)
+        # print('c', c.shape)
+        # print('dec_hs', dec_hs.shape)
         out  = np.concatenate((c, dec_hs), axis=2) # (N, T, 2*H)
         score = self.affine.forward(out)
 
