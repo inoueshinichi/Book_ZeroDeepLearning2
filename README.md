@@ -1,6 +1,6 @@
 # DeepLearning2_NLP
 ゼロから学ぶDeepLearning②　自然言語処理編(NPL)  
-RNN, LSTM, GRU, Attention  
+RNN, LSTM, GRU, Seq2Seq, Attention  
 https://www.oreilly.co.jp/books/9784873118369/  
 
 | 章 | タイトル |
